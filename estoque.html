@@ -1,0 +1,1723 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestão de Estoque - 18º BPM/I</title>
+  <style>
+    :root{
+      --amarelo:#f9e65c;
+      --amarelo-neon:#ffff66;
+      --cinza:#d0d0d0;
+      --cinza-medio:#777;
+      --bg:#050509;
+      --card-bg:rgba(10,10,15,0.96);
+      --gap:20px;
+      --radius:14px;
+      --shadow-soft:0 14px 40px rgba(0,0,0,0.8);
+      --danger:#ff5555;
+      --success:#5fd75f;
+    }
+
+    *{box-sizing:border-box;margin:0;padding:0;}
+
+    body{
+      min-height:100vh;
+      font-family:Arial,system-ui,-apple-system,BlinkMacSystemFont,sans-serif;
+      background:
+        radial-gradient(circle at top,#303030 0,#050509 45%,#000 100%);
+      color:var(--cinza);
+      padding:16px;
+    }
+
+    .app{
+      max-width:1200px;
+      margin:0 auto 40px;
+    }
+
+    header{
+      display:flex;
+      flex-wrap:wrap;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom:20px;
+      padding:14px 18px;
+      border-radius:18px;
+      background:linear-gradient(135deg,rgba(0,0,0,0.95),rgba(25,25,25,0.95));
+      border:1px solid rgba(249,230,92,0.25);
+      box-shadow:var(--shadow-soft);
+      position:relative;
+      overflow:hidden;
+    }
+
+    header::before{
+      content:"";
+      position:absolute;
+      inset:-40%;
+      background:radial-gradient(circle at top right,rgba(255,255,150,0.18),transparent 55%);
+      opacity:0.9;
+      pointer-events:none;
+    }
+
+    header-content{
+      position:relative;
+      z-index:1;
+    }
+
+    h1{
+      color:var(--amarelo);
+      font-size:1.6rem;
+      letter-spacing:0.04em;
+      text-transform:uppercase;
+      margin-bottom:4px;
+    }
+
+    .sub{
+      font-size:0.85rem;
+      color:var(--cinza-medio);
+    }
+
+    .badge{
+      position:relative;
+      z-index:1;
+      padding:6px 14px;
+      border-radius:999px;
+      border:1px solid rgba(249,230,92,0.5);
+      font-size:0.78rem;
+      text-transform:uppercase;
+      letter-spacing:0.08em;
+      color:var(--amarelo-neon);
+      background:radial-gradient(circle at top,rgba(255,255,255,0.06),rgba(0,0,0,0.9));
+      box-shadow:0 0 25px rgba(0,0,0,0.8);
+    }
+
+    main{
+      display:flex;
+      flex-direction:column;
+      gap:var(--gap);
+    }
+
+    .cards-resumo{
+      display:grid;
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:var(--gap);
+    }
+
+    .card{
+      background:var(--card-bg);
+      border-radius:var(--radius);
+      padding:14px 16px;
+      box-shadow:var(--shadow-soft);
+      border:1px solid rgba(255,255,255,0.05);
+      position:relative;
+      overflow:hidden;
+    }
+
+    .card::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      background:linear-gradient(135deg,rgba(249,230,92,0.08),transparent 60%);
+      mix-blend-mode:soft-light;
+      opacity:0.8;
+      pointer-events:none;
+    }
+
+    .card-header{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:10px;
+      position:relative;
+      z-index:1;
+    }
+
+    .card-title{
+      font-size:0.95rem;
+      text-transform:uppercase;
+      letter-spacing:0.08em;
+      color:var(--amarelo);
+    }
+
+    .card-sub{
+      font-size:0.75rem;
+      color:var(--cinza-medio);
+    }
+
+    .resumo-numero{
+      font-size:1.6rem;
+      font-weight:bold;
+      color:var(--amarelo-neon);
+      margin-top:4px;
+    }
+
+    .resumo-legenda{
+      font-size:0.78rem;
+      color:var(--cinza-medio);
+    }
+
+    .resumo-icon{
+      font-size:1.6rem;
+      opacity:0.7;
+    }
+
+    .grid-formularios{
+      display:grid;
+      grid-template-columns:2fr 2fr;
+      gap:var(--gap);
+    }
+
+    .stack-col{
+      display:flex;
+      flex-direction:column;
+      gap:var(--gap);
+    }
+
+    label{
+      display:block;
+      font-size:0.78rem;
+      color:var(--cinza);
+      margin-bottom:4px;
+      text-transform:uppercase;
+      letter-spacing:0.05em;
+    }
+
+    input,select,textarea{
+      width:100%;
+      padding:8px 9px;
+      border-radius:10px;
+      border:1px solid rgba(255,255,255,0.08);
+      background:rgba(5,5,10,0.9);
+      color:#f5f5f5;
+      font-size:0.85rem;
+      outline:none;
+      transition:border-color 0.15s,box-shadow 0.15s,background 0.15s;
+    }
+
+    input:focus,select:focus,textarea:focus{
+      border-color:var(--amarelo);
+      box-shadow:0 0 0 1px rgba(249,230,92,0.3);
+      background:rgba(10,10,18,0.98);
+    }
+
+    textarea{
+      resize:vertical;
+      min-height:60px;
+    }
+
+    .form-grid{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:10px 14px;
+    }
+
+    .form-grid-3{
+      display:grid;
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:10px 14px;
+    }
+
+    .form-grid-4{
+      display:grid;
+      grid-template-columns:repeat(4,minmax(0,1fr));
+      gap:10px 14px;
+    }
+
+    .form-group{
+      margin-bottom:8px;
+      position:relative;
+      z-index:1;
+    }
+
+    button{
+      border:none;
+      border-radius:999px;
+      padding:8px 16px;
+      font-size:0.85rem;
+      font-weight:bold;
+      text-transform:uppercase;
+      letter-spacing:0.08em;
+      cursor:pointer;
+      transition:transform 0.12s,box-shadow 0.12s,background 0.12s;
+    }
+
+    .btn-principal{
+      background:linear-gradient(135deg,#f9e65c,#ffff9e);
+      color:#000;
+      box-shadow:0 10px 25px rgba(0,0,0,0.8);
+    }
+
+    .btn-principal:hover{
+      transform:translateY(-1px);
+      box-shadow:0 13px 30px rgba(0,0,0,0.9);
+    }
+
+    .btn-secundario{
+      background:transparent;
+      border:1px solid rgba(249,230,92,0.5);
+      color:var(--amarelo);
+    }
+
+    .btn-secundario:hover{
+      background:rgba(249,230,92,0.12);
+    }
+
+    .btn-perigo{
+      background:transparent;
+      border:1px solid rgba(255,85,85,0.7);
+      color:#ff9999;
+    }
+
+    .btn-perigo:hover{
+      background:rgba(255,85,85,0.15);
+    }
+
+    .acoes-linha{
+      display:flex;
+      gap:6px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+
+    .linha-botoes{
+      display:flex;
+      gap:8px;
+      margin-top:8px;
+      flex-wrap:wrap;
+    }
+
+    .card-tabela{
+      margin-top:4px;
+    }
+
+    .tabela-container{
+      max-height:380px;
+      overflow:auto;
+      margin-top:8px;
+      border-radius:10px;
+      border:1px solid rgba(255,255,255,0.06);
+    }
+
+    table{
+      width:100%;
+      border-collapse:collapse;
+      font-size:0.78rem;
+      background:rgba(5,5,10,0.98);
+    }
+
+    thead{
+      position:sticky;
+      top:0;
+      background:rgba(5,5,10,0.98);
+      z-index:2;
+    }
+
+    th,td{
+      padding:7px 8px;
+      border-bottom:1px solid rgba(255,255,255,0.03);
+      text-align:left;
+      white-space:nowrap;
+    }
+
+    th{
+      text-transform:uppercase;
+      letter-spacing:0.06em;
+      font-size:0.7rem;
+      color:var(--cinza-medio);
+    }
+
+    tbody tr:nth-child(even){
+      background:rgba(255,255,255,0.01);
+    }
+
+    .tag-critico{
+      display:inline-flex;
+      align-items:center;
+      gap:4px;
+      padding:2px 8px;
+      border-radius:999px;
+      border:1px solid rgba(255,85,85,0.7);
+      background:rgba(255,85,85,0.14);
+      color:#ffaaaa;
+      font-size:0.68rem;
+      text-transform:uppercase;
+      letter-spacing:0.08em;
+    }
+
+    .tag-ok{
+      display:inline-flex;
+      align-items:center;
+      gap:4px;
+      padding:2px 8px;
+      border-radius:999px;
+      border:1px solid rgba(95,215,95,0.7);
+      background:rgba(95,215,95,0.14);
+      color:#c4f7c4;
+      font-size:0.68rem;
+      text-transform:uppercase;
+      letter-spacing:0.08em;
+    }
+
+    .status-dot{
+      width:8px;
+      height:8px;
+      border-radius:50%;
+      background:var(--danger);
+    }
+
+    .status-dot.ok{
+      background:var(--success);
+    }
+
+    .search-row{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      margin-top:4px;
+      position:relative;
+      z-index:1;
+    }
+
+    .search-row input,
+    .search-row select{
+      max-width:260px;
+    }
+
+    .msg-sistema{
+      font-size:0.78rem;
+      color:var(--cinza-medio);
+      margin-top:4px;
+    }
+
+    .msg-erro{
+      color:#ff9999;
+    }
+
+    .msg-sucesso{
+      color:#c4f7c4;
+    }
+
+    footer{
+      margin-top:24px;
+      font-size:0.72rem;
+      text-align:center;
+      color:var(--cinza-medio);
+    }
+
+    @media (max-width:900px){
+      .cards-resumo{
+        grid-template-columns:repeat(2,minmax(0,1fr));
+      }
+      .grid-formularios{
+        grid-template-columns:1fr;
+      }
+    }
+
+    @media (max-width:640px){
+      header{
+        flex-direction:column;
+        align-items:flex-start;
+      }
+      .cards-resumo{
+        grid-template-columns:1fr;
+      }
+      .form-grid,.form-grid-3,.form-grid-4{
+        grid-template-columns:1fr;
+      }
+      .search-row{
+        flex-direction:column;
+        align-items:flex-start;
+      }
+      .search-row input,
+      .search-row select{
+        max-width:100%;
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <header-content>
+      <h1>Gestão de Estoque – 18º BPM/I</h1>
+      <div class="sub">
+        Controle de materiais & distribuição ao efetivo<br>
+        <span style="color:var(--amarelo-neon);font-size:0.78rem;">
+          Base: Firebase Realtime Database – Estoque, Movimentações & Efetivo
+        </span>
+      </div>
+    </header-content>
+    <div class="badge">
+      Sistema Interno • Uso Restrito
+    </div>
+  </header>
+
+  <main>
+    <!-- RESUMO -->
+    <section class="cards-resumo">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Itens Cadastrados</div>
+            <div class="card-sub">Quantidade de tipos de materiais</div>
+          </div>
+          <div class="resumo-icon">📦</div>
+        </div>
+        <div class="resumo-numero" id="resumo-itens">0</div>
+        <div class="resumo-legenda">Tipos diferentes em estoque</div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Unidades em Estoque</div>
+            <div class="card-sub">Soma total de itens disponíveis</div>
+          </div>
+          <div class="resumo-icon">📊</div>
+        </div>
+        <div class="resumo-numero" id="resumo-unidades">0</div>
+        <div class="resumo-legenda">Soma de todas as quantidades atuais</div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Itens em Nível Crítico</div>
+            <div class="card-sub">Abaixo ou igual ao mínimo definido</div>
+          </div>
+          <div class="resumo-icon">⚠️</div>
+        </div>
+        <div class="resumo-numero" id="resumo-criticos">0</div>
+        <div class="resumo-legenda">Recomendada reposição</div>
+      </div>
+    </section>
+
+    <!-- FORMULÁRIOS -->
+    <section class="grid-formularios">
+      <!-- Cadastro / Edição Itens -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Cadastro de Itens</div>
+            <div class="card-sub">Incluir ou editar materiais de estoque</div>
+          </div>
+        </div>
+        <form id="form-item">
+          <input type="hidden" id="item-id">
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="item-nome">Nome do Item</label>
+              <input id="item-nome" type="text" placeholder="Ex.: Lanterna tática" required>
+            </div>
+            <div class="form-group">
+              <label for="item-categoria">Categoria</label>
+              <input id="item-categoria" type="text" placeholder="Ex.: Equipamento individual">
+            </div>
+            <div class="form-group">
+              <label for="item-local">Local / Seção</label>
+              <input id="item-local" type="text" placeholder="Ex.: Almoxarifado 2ª Cia">
+            </div>
+            <div class="form-group">
+              <label for="item-minimo">Qtd. Mínima (Estoque Crítico)</label>
+              <input id="item-minimo" type="number" min="0" value="0">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="item-qtde-inicial">Quantidade inicial (ao cadastrar)</label>
+            <input id="item-qtde-inicial" type="number" min="0" value="0">
+          </div>
+
+          <div class="form-group">
+            <label for="item-obs">Observações</label>
+            <textarea id="item-obs" placeholder="Ex.: Uso exclusivo patrulha tática, controle por RE, etc."></textarea>
+          </div>
+
+          <div class="linha-botoes">
+            <button type="submit" class="btn-principal" id="btn-salvar-item">Cadastrar Item</button>
+            <button type="button" class="btn-secundario" id="btn-cancelar-edicao" style="display:none;">
+              Cancelar edição
+            </button>
+          </div>
+          <div id="msg-item" class="msg-sistema"></div>
+        </form>
+      </div>
+
+      <!-- Coluna com Movimentações + Cadastro Policiais -->
+      <div class="stack-col">
+        <!-- Movimentações -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Movimentação</div>
+              <div class="card-sub">Entradas, saídas e distribuição ao efetivo</div>
+            </div>
+          </div>
+
+          <form id="form-mov">
+            <div class="form-group">
+              <label for="mov-item">Item</label>
+              <select id="mov-item" required>
+                <option value="">Selecione um item...</option>
+              </select>
+            </div>
+
+            <div class="form-grid-3">
+              <div class="form-group">
+                <label for="mov-tipo">Tipo</label>
+                <select id="mov-tipo" required>
+                  <option value="entrada">Entrada</option>
+                  <option value="saida">Saída / Distribuição</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="mov-qtde">Quantidade</label>
+                <input id="mov-qtde" type="number" min="1" value="1" required>
+              </div>
+              <div class="form-group">
+                <label for="mov-policial">Policial (cadastro)</label>
+                <select id="mov-policial">
+                  <option value="">Selecione...</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="mov-resp">Responsável / Efetivo (texto livre)</label>
+              <input id="mov-resp" type="text" placeholder="Ex.: 140965-4 FENILLE" required>
+            </div>
+
+            <div class="form-group">
+              <label for="mov-obs">Observações</label>
+              <textarea id="mov-obs" placeholder="Ex.: Entrega para patrulha de turno, substituição de item danificado."></textarea>
+            </div>
+
+            <div class="linha-botoes">
+              <button type="submit" class="btn-principal">Registrar Movimentação</button>
+            </div>
+            <div id="msg-mov" class="msg-sistema"></div>
+          </form>
+        </div>
+
+        <!-- Cadastro de Policiais -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Cadastro de Policiais</div>
+              <div class="card-sub">Base para distribuição e histórico por recebedor</div>
+            </div>
+          </div>
+
+          <form id="form-policial">
+            <input type="hidden" id="policial-id">
+            <div class="form-grid-4">
+              <div class="form-group">
+                <label for="policial-nome">Nome</label>
+                <input id="policial-nome" type="text" placeholder="Ex.: FENILLE" required>
+              </div>
+              <div class="form-group">
+                <label for="policial-re">RE</label>
+                <input id="policial-re" type="text" placeholder="Ex.: 140965-4" required>
+              </div>
+              <div class="form-group">
+                <label for="policial-posto">Posto/Grad.</label>
+                <input id="policial-posto" type="text" placeholder="Ex.: Cb PM">
+              </div>
+              <div class="form-group">
+                <label for="policial-cia">Cia / Seção</label>
+                <input id="policial-cia" type="text" placeholder="Ex.: 2ª Cia">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="policial-obs">Observações</label>
+              <textarea id="policial-obs" placeholder="Ex.: Função, destacamento, etc."></textarea>
+            </div>
+
+            <div class="linha-botoes">
+              <button type="submit" class="btn-principal" id="btn-salvar-policial">Cadastrar Policial</button>
+              <button type="button" class="btn-secundario" id="btn-cancelar-policial" style="display:none;">
+                Cancelar edição
+              </button>
+            </div>
+            <div id="msg-policial" class="msg-sistema"></div>
+          </form>
+
+          <div class="tabela-container" style="max-height:200px;margin-top:10px;">
+            <table>
+              <thead>
+              <tr>
+                <th>Policial</th>
+                <th>RE</th>
+                <th>Cia/Seção</th>
+                <th>Ações</th>
+              </tr>
+              </thead>
+              <tbody id="tbody-policiais">
+              <tr><td colspan="4">Nenhum policial cadastrado.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tabela de Itens -->
+    <section class="card card-tabela">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Itens em Estoque</div>
+          <div class="card-sub">Visão geral de materiais cadastrados</div>
+        </div>
+      </div>
+
+      <div class="search-row">
+        <input id="busca-itens" type="text" placeholder="Buscar por nome, categoria ou local...">
+        <div class="linha-botoes">
+          <button type="button" class="btn-secundario" id="btn-recarregar">Recarregar</button>
+          <button type="button" class="btn-secundario" id="btn-exportar-csv">Exportar CSV</button>
+        </div>
+      </div>
+
+      <div class="tabela-container">
+        <table>
+          <thead>
+          <tr>
+            <th>Item</th>
+            <th>Categoria</th>
+            <th>Local / Seção</th>
+            <th>Qtd. Atual</th>
+            <th>Mín.</th>
+            <th>Status</th>
+            <th>Ações</th>
+          </tr>
+          </thead>
+          <tbody id="tbody-itens">
+          <tr><td colspan="7">Carregando dados...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div id="msg-tabela" class="msg-sistema"></div>
+    </section>
+
+    <!-- Histórico -->
+    <section class="card card-tabela">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Histórico de Movimentações</div>
+          <div class="card-sub">Filtragem por período e por recebedor</div>
+        </div>
+      </div>
+
+      <!-- Filtros -->
+      <div class="search-row">
+        <div class="form-grid-4" style="width:100%;gap:10px;">
+          <div class="form-group">
+            <label for="filtro-data-inicio">Data Início</label>
+            <input id="filtro-data-inicio" type="date">
+          </div>
+          <div class="form-group">
+            <label for="filtro-data-fim">Data Fim</label>
+            <input id="filtro-data-fim" type="date">
+          </div>
+          <div class="form-group">
+            <label for="filtro-policial">Policial (cadastro)</label>
+            <select id="filtro-policial">
+              <option value="">Todos</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>&nbsp;</label>
+            <div class="linha-botoes">
+              <button type="button" class="btn-secundario" id="btn-aplicar-filtros">Aplicar filtros</button>
+              <button type="button" class="btn-secundario" id="btn-limpar-filtros">Limpar</button>
+              <button type="button" class="btn-secundario" id="btn-exportar-historico">Exportar CSV</button>
+              <button type="button" class="btn-secundario" id="btn-relatorio-policial">Relatório por Policial</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tabela-container" style="max-height:260px;">
+        <table>
+          <thead>
+          <tr>
+            <th>Data/Hora</th>
+            <th>Item</th>
+            <th>Tipo</th>
+            <th>Qtd</th>
+            <th>Recebedor</th>
+            <th>Antes &gt; Depois</th>
+          </tr>
+          </thead>
+          <tbody id="tbody-historico">
+          <tr><td colspan="6">Carregando histórico...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>
+    Gestão de Estoque – 18º BPM/I • Desenvolvido para uso interno<br>
+    Base integrada ao Firebase Realtime Database
+  </footer>
+</div>
+
+<script>
+  // ===== CONFIGURAÇÃO DO FIREBASE =====
+  const FIREBASE_URL = "https://gestaoviaturas-daf3e-default-rtdb.firebaseio.com";
+
+  let itensEstoque = [];
+  let historicoMovAll = [];
+  let policiais = [];
+
+  // Filtros de histórico
+  let filtroDataInicio = "";
+  let filtroDataFim = "";
+  let filtroPolicialId = "";
+
+  // ===== ELEMENTOS =====
+  const elResumoItens = document.getElementById("resumo-itens");
+  const elResumoUnidades = document.getElementById("resumo-unidades");
+  const elResumoCriticos = document.getElementById("resumo-criticos");
+
+  const elTbodyItens = document.getElementById("tbody-itens");
+  const elTbodyHistorico = document.getElementById("tbody-historico");
+  const elTbodyPoliciais = document.getElementById("tbody-policiais");
+
+  const elMsgItem = document.getElementById("msg-item");
+  const elMsgMov = document.getElementById("msg-mov");
+  const elMsgTabela = document.getElementById("msg-tabela");
+  const elMsgPolicial = document.getElementById("msg-policial");
+
+  const elFormItem = document.getElementById("form-item");
+  const elFormMov = document.getElementById("form-mov");
+  const elFormPolicial = document.getElementById("form-policial");
+
+  const elItemId = document.getElementById("item-id");
+  const elItemNome = document.getElementById("item-nome");
+  const elItemCategoria = document.getElementById("item-categoria");
+  const elItemLocal = document.getElementById("item-local");
+  const elItemMinimo = document.getElementById("item-minimo");
+  const elItemQtdeInicial = document.getElementById("item-qtde-inicial");
+  const elItemObs = document.getElementById("item-obs");
+  const elBtnSalvarItem = document.getElementById("btn-salvar-item");
+  const elBtnCancelarEdicao = document.getElementById("btn-cancelar-edicao");
+
+  const elMovItem = document.getElementById("mov-item");
+  const elMovTipo = document.getElementById("mov-tipo");
+  const elMovQtde = document.getElementById("mov-qtde");
+  const elMovPolicial = document.getElementById("mov-policial");
+  const elMovResp = document.getElementById("mov-resp");
+  const elMovObs = document.getElementById("mov-obs");
+
+  const elBuscaItens = document.getElementById("busca-itens");
+  const elBtnRecarregar = document.getElementById("btn-recarregar");
+  const elBtnExportarCsv = document.getElementById("btn-exportar-csv");
+
+  const elPolicialId = document.getElementById("policial-id");
+  const elPolicialNome = document.getElementById("policial-nome");
+  const elPolicialRe = document.getElementById("policial-re");
+  const elPolicialPosto = document.getElementById("policial-posto");
+  const elPolicialCia = document.getElementById("policial-cia");
+  const elPolicialObs = document.getElementById("policial-obs");
+  const elBtnSalvarPolicial = document.getElementById("btn-salvar-policial");
+  const elBtnCancelarPolicial = document.getElementById("btn-cancelar-policial");
+
+  const elFiltroDataInicio = document.getElementById("filtro-data-inicio");
+  const elFiltroDataFim = document.getElementById("filtro-data-fim");
+  const elFiltroPolicial = document.getElementById("filtro-policial");
+  const elBtnAplicarFiltros = document.getElementById("btn-aplicar-filtros");
+  const elBtnLimparFiltros = document.getElementById("btn-limpar-filtros");
+  const elBtnExportarHistorico = document.getElementById("btn-exportar-historico");
+  const elBtnRelatorioPolicial = document.getElementById("btn-relatorio-policial");
+
+  // ===== MENSAGENS =====
+  function limparMensagens(){
+    [elMsgItem,elMsgMov,elMsgTabela,elMsgPolicial].forEach(el=>{
+      el.textContent = "";
+      el.className = "msg-sistema";
+    });
+  }
+
+  function mostrarMensagem(el,msg,tipo="info"){
+    el.textContent = msg;
+    el.className = "msg-sistema";
+    if(tipo==="erro") el.classList.add("msg-erro");
+    if(tipo==="sucesso") el.classList.add("msg-sucesso");
+  }
+
+  // ===== CARREGAMENTO FIREBASE =====
+
+  async function carregarEstoque(){
+    try{
+      const resp = await fetch(FIREBASE_URL + "/estoque.json");
+      if(!resp.ok) throw new Error("Erro HTTP " + resp.status);
+      const dados = await resp.json();
+      itensEstoque = [];
+      if(dados){
+        itensEstoque = Object.entries(dados).map(([id,item])=>({
+          id,
+          nome:item.nome || "",
+          categoria:item.categoria || "",
+          local:item.local || "",
+          qtdAtual:Number(item.qtdAtual || 0),
+          qtdMinima:Number(item.qtdMinima || 0),
+          obs:item.obs || "",
+          criadoEm:item.criadoEm || null,
+          atualizadoEm:item.atualizadoEm || null
+        }));
+      }
+      atualizarTabelaItens();
+      atualizarSelectItens();
+      atualizarResumo();
+    }catch(e){
+      console.error("Erro ao carregar estoque:",e);
+      mostrarMensagem(elMsgTabela,"Erro ao carregar dados do estoque.","erro");
+      elTbodyItens.innerHTML = '<tr><td colspan="7">Falha ao carregar dados do estoque.</td></tr>';
+    }
+  }
+
+  async function carregarHistorico(){
+    try{
+      const resp = await fetch(FIREBASE_URL + "/movimentacoes.json");
+      if(!resp.ok) throw new Error("Erro HTTP " + resp.status);
+      const dados = await resp.json();
+      historicoMovAll = [];
+      if(dados){
+        historicoMovAll = Object.entries(dados).map(([id,mov])=>({
+          id,
+          ...mov
+        }));
+        historicoMovAll.sort((a,b)=> (b.dataHora || "").localeCompare(a.dataHora || ""));
+      }
+      atualizarTabelaHistorico();
+    }catch(e){
+      console.error("Erro ao carregar histórico:",e);
+      elTbodyHistorico.innerHTML = '<tr><td colspan="6">Falha ao carregar histórico.</td></tr>';
+    }
+  }
+
+  async function carregarPoliciais(){
+    try{
+      const resp = await fetch(FIREBASE_URL + "/policiais.json");
+      if(!resp.ok) throw new Error("Erro HTTP " + resp.status);
+      const dados = await resp.json();
+      policiais = [];
+      if(dados){
+        policiais = Object.entries(dados).map(([id,p])=>({
+          id,
+          nome:p.nome || "",
+          re:p.re || "",
+          posto:p.posto || "",
+          cia:p.cia || "",
+          obs:p.obs || ""
+        }));
+      }
+      atualizarTabelaPoliciais();
+      atualizarSelectPoliciais();
+    }catch(e){
+      console.error("Erro ao carregar policiais:",e);
+      elTbodyPoliciais.innerHTML = '<tr><td colspan="4">Falha ao carregar policiais.</td></tr>';
+    }
+  }
+
+  // ===== RESUMO =====
+  function atualizarResumo(){
+    const totalTipos = itensEstoque.length;
+    const totalUnidades = itensEstoque.reduce((acc,it)=>acc + (Number(it.qtdAtual)||0),0);
+    const criticos = itensEstoque.filter(it=> Number(it.qtdAtual)<=Number(it.qtdMinima) ).length;
+
+    elResumoItens.textContent = totalTipos;
+    elResumoUnidades.textContent = totalUnidades;
+    elResumoCriticos.textContent = criticos;
+  }
+
+  // ===== ITENS =====
+  function aplicarFiltroItens(){
+    const termo = (elBuscaItens.value || "").toLowerCase().trim();
+    if(!termo) return itensEstoque;
+    return itensEstoque.filter(it=>{
+      const alvo = (it.nome + " " + it.categoria + " " + it.local).toLowerCase();
+      return alvo.includes(termo);
+    });
+  }
+
+  function atualizarTabelaItens(){
+    const lista = aplicarFiltroItens();
+    if(lista.length===0){
+      elTbodyItens.innerHTML = '<tr><td colspan="7">Nenhum item encontrado.</td></tr>';
+      return;
+    }
+
+    elTbodyItens.innerHTML = lista.map(it=>{
+      const critico = Number(it.qtdAtual)<=Number(it.qtdMinima);
+      const tagStatus = critico
+        ? `<span class="tag-critico"><span class="status-dot"></span> Crítico</span>`
+        : `<span class="tag-ok"><span class="status-dot ok"></span> OK</span>`;
+
+      return `
+        <tr>
+          <td>${escapeHtml(it.nome)}</td>
+          <td>${escapeHtml(it.categoria)}</td>
+          <td>${escapeHtml(it.local)}</td>
+          <td>${it.qtdAtual}</td>
+          <td>${it.qtdMinima}</td>
+          <td>${tagStatus}</td>
+          <td>
+            <div class="acoes-linha">
+              <button type="button" class="btn-secundario" data-acao="editar" data-id="${it.id}">Editar</button>
+              <button type="button" class="btn-perigo" data-acao="excluir" data-id="${it.id}">Excluir</button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join("");
+  }
+
+  // ===== HISTÓRICO =====
+  function aplicarFiltrosHistorico(){
+    let lista = [...historicoMovAll];
+
+    if(filtroPolicialId){
+      lista = lista.filter(mov => mov.policialId === filtroPolicialId);
+    }
+
+    if(filtroDataInicio){
+      const dtIni = new Date(filtroDataInicio + "T00:00:00");
+      lista = lista.filter(mov=>{
+        if(!mov.dataHora) return false;
+        const d = new Date(mov.dataHora);
+        return d >= dtIni;
+      });
+    }
+
+    if(filtroDataFim){
+      const dtFim = new Date(filtroDataFim + "T23:59:59");
+      lista = lista.filter(mov=>{
+        if(!mov.dataHora) return false;
+        const d = new Date(mov.dataHora);
+        return d <= dtFim;
+      });
+    }
+
+    const nenhumFiltro = !filtroPolicialId && !filtroDataInicio && !filtroDataFim;
+    if(nenhumFiltro){
+      lista = lista.slice(0,50);
+    }
+
+    return lista;
+  }
+
+  function atualizarTabelaHistorico(){
+    const lista = aplicarFiltrosHistorico();
+
+    if(lista.length===0){
+      elTbodyHistorico.innerHTML = '<tr><td colspan="6">Nenhuma movimentação encontrada para os filtros selecionados.</td></tr>';
+      return;
+    }
+
+    elTbodyHistorico.innerHTML = lista.map(mov=>{
+      const dataFormatada = formatarDataHora(mov.dataHora);
+      const tipoLabel = mov.tipo==="entrada" ? "Entrada" : "Saída";
+      const tipoCor = mov.tipo==="entrada" ? "tag-ok" : "tag-critico";
+      const antesDepois = (mov.qtdAntes ?? "?") + " → " + (mov.qtdDepois ?? "?");
+      const recebedor = mov.responsavel || mov.recebedor || "";
+      return `
+        <tr>
+          <td>${dataFormatada}</td>
+          <td>${escapeHtml(mov.itemNome || "")}</td>
+          <td><span class="${tipoCor}">${tipoLabel}</span></td>
+          <td>${mov.quantidade || 0}</td>
+          <td>${escapeHtml(recebedor)}</td>
+          <td>${antesDepois}</td>
+        </tr>
+      `;
+    }).join("");
+  }
+
+  // ===== POLICIAIS =====
+  function atualizarTabelaPoliciais(){
+    if(!policiais.length){
+      elTbodyPoliciais.innerHTML = '<tr><td colspan="4">Nenhum policial cadastrado.</td></tr>';
+      return;
+    }
+
+    elTbodyPoliciais.innerHTML = policiais.map(p=>{
+      const nomeExibicao = montarNomePolicial(p);
+      return `
+        <tr>
+          <td>${escapeHtml(nomeExibicao)}</td>
+          <td>${escapeHtml(p.re)}</td>
+          <td>${escapeHtml(p.cia)}</td>
+          <td>
+            <div class="acoes-linha">
+              <button type="button" class="btn-secundario" data-acao="editar-policial" data-id="${p.id}">Editar</button>
+              <button type="button" class="btn-perigo" data-acao="excluir-policial" data-id="${p.id}">Excluir</button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join("");
+  }
+
+  // ===== SELECTS =====
+  function atualizarSelectItens(){
+    const sel = elMovItem;
+    const selecionado = sel.value;
+    sel.innerHTML = '<option value="">Selecione um item...</option>';
+    itensEstoque.forEach(it=>{
+      const opt = document.createElement("option");
+      opt.value = it.id;
+      opt.textContent = `${it.nome} (${it.qtdAtual})`;
+      sel.appendChild(opt);
+    });
+    if(selecionado){
+      sel.value = selecionado;
+    }
+  }
+
+  function montarNomePolicial(p){
+    const partes = [];
+    if(p.posto) partes.push(p.posto);
+    if(p.nome) partes.push(p.nome);
+    let base = partes.join(" ");
+    if(p.re) base += ` – RE ${p.re}`;
+    return base;
+  }
+
+  function atualizarSelectPoliciais(){
+    const selecionadoMov = elMovPolicial.value;
+    const selecionadoFiltro = elFiltroPolicial.value;
+
+    elMovPolicial.innerHTML = '<option value="">Selecione...</option>';
+    elFiltroPolicial.innerHTML = '<option value="">Todos</option>';
+
+    policiais.forEach(p=>{
+      const label = montarNomePolicial(p);
+
+      const optMov = document.createElement("option");
+      optMov.value = p.id;
+      optMov.textContent = label;
+      elMovPolicial.appendChild(optMov);
+
+      const optFiltro = document.createElement("option");
+      optFiltro.value = p.id;
+      optFiltro.textContent = label;
+      elFiltroPolicial.appendChild(optFiltro);
+    });
+
+    if(selecionadoMov) elMovPolicial.value = selecionadoMov;
+    if(selecionadoFiltro) elFiltroPolicial.value = selecionadoFiltro;
+  }
+
+  // ===== FORM ITENS =====
+  function resetFormItem(){
+    elItemId.value = "";
+    elItemNome.value = "";
+    elItemCategoria.value = "";
+    elItemLocal.value = "";
+    elItemMinimo.value = "0";
+    elItemQtdeInicial.value = "0";
+    elItemObs.value = "";
+    elBtnSalvarItem.textContent = "Cadastrar Item";
+    elBtnCancelarEdicao.style.display = "none";
+  }
+
+  function preencherFormItem(item){
+    elItemId.value = item.id;
+    elItemNome.value = item.nome || "";
+    elItemCategoria.value = item.categoria || "";
+    elItemLocal.value = item.local || "";
+    elItemMinimo.value = item.qtdMinima ?? "0";
+    elItemQtdeInicial.value = "0";
+    elItemObs.value = item.obs || "";
+    elBtnSalvarItem.textContent = "Atualizar Item";
+    elBtnCancelarEdicao.style.display = "inline-block";
+  }
+
+  elFormItem.addEventListener("submit",async (e)=>{
+    e.preventDefault();
+    limparMensagens();
+
+    const nome = elItemNome.value.trim();
+    if(!nome){
+      mostrarMensagem(elMsgItem,"Informe o nome do item.","erro");
+      return;
+    }
+
+    const payloadBase = {
+      nome,
+      categoria:elItemCategoria.value.trim(),
+      local:elItemLocal.value.trim(),
+      qtdMinima:Number(elItemMinimo.value || 0),
+      obs:elItemObs.value.trim()
+    };
+
+    const id = elItemId.value;
+    try{
+      if(id){
+        const existente = itensEstoque.find(it=>it.id===id);
+        const payload = {
+          ...payloadBase,
+          qtdAtual: existente ? Number(existente.qtdAtual || 0) : 0,
+          atualizadoEm:new Date().toISOString()
+        };
+
+        const resp = await fetch(`${FIREBASE_URL}/estoque/${id}.json`,{
+          method:"PATCH",
+          headers:{"Content-Type":"application/json"},
+          body:JSON.stringify(payload)
+        });
+        if(!resp.ok) throw new Error("Erro HTTP " + resp.status);
+        mostrarMensagem(elMsgItem,"Item atualizado com sucesso.","sucesso");
+      }else{
+        const qtdInicial = Number(elItemQtdeInicial.value || 0);
+        const agora = new Date().toISOString();
+        const payloadNovo = {
+          ...payloadBase,
+          qtdAtual:qtdInicial,
+          criadoEm:agora,
+          atualizadoEm:agora
+        };
+
+        const resp = await fetch(`${FIREBASE_URL}/estoque.json`,{
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body:JSON.stringify(payloadNovo)
+        });
+        if(!resp.ok) throw new Error("Erro HTTP " + resp.status);
+        mostrarMensagem(elMsgItem,"Item cadastrado com sucesso.","sucesso");
+      }
+
+      resetFormItem();
+      await carregarEstoque();
+    }catch(e){
+      console.error("Erro ao salvar item:",e);
+      mostrarMensagem(elMsgItem,"Erro ao salvar item. Verifique a conexão ou as permissões do Firebase.","erro");
+    }
+  });
+
+  elBtnCancelarEdicao.addEventListener("click",()=>{
+    resetFormItem();
+    limparMensagens();
+  });
+
+  elTbodyItens.addEventListener("click",async (e)=>{
+    const btn = e.target.closest("button[data-acao]");
+    if(!btn) return;
+    const acao = btn.dataset.acao;
+    const id = btn.dataset.id;
+    const item = itensEstoque.find(it=>it.id===id);
+    if(!item) return;
+
+    if(acao==="editar"){
+      preencherFormItem(item);
+      window.scrollTo({top:0,behavior:"smooth"});
+    }
+
+    if(acao==="excluir"){
+      if(!confirm("Confirma a exclusão definitiva deste item do estoque?")) return;
+      try{
+        const resp = await fetch(`${FIREBASE_URL}/estoque/${id}.json`,{
+          method:"DELETE"
+        });
+        if(!resp.ok) throw new Error("Erro HTTP " + resp.status);
+        mostrarMensagem(elMsgTabela,"Item excluído com sucesso.","sucesso");
+        await carregarEstoque();
+      }catch(e){
+        console.error("Erro ao excluir item:",e);
+        mostrarMensagem(elMsgTabela,"Erro ao excluir item.","erro");
+      }
+    }
+  });
+
+  // ===== FORM MOVIMENTAÇÃO =====
+  elFormMov.addEventListener("submit",async (e)=>{
+    e.preventDefault();
+    limparMensagens();
+
+    const idItem = elMovItem.value;
+    if(!idItem){
+      mostrarMensagem(elMsgMov,"Selecione um item para movimentar.","erro");
+      return;
+    }
+    const tipo = elMovTipo.value;
+    const quantidade = Number(elMovQtde.value || 0);
+    const obs = elMovObs.value.trim();
+
+    if(!quantidade || quantidade<=0){
+      mostrarMensagem(elMsgMov,"Informe uma quantidade válida.","erro");
+      return;
+    }
+
+    const policialId = elMovPolicial.value || "";
+    let responsavelTexto = elMovResp.value.trim();
+
+    const policialSelecionado = policiais.find(p=>p.id===policialId);
+    if(policialSelecionado){
+      const nomePolicial = montarNomePolicial(policialSelecionado);
+      if(!responsavelTexto){
+        responsavelTexto = nomePolicial;
+        elMovResp.value = responsavelTexto;
+      }
+    }
+
+    if(!responsavelTexto){
+      mostrarMensagem(elMsgMov,"Informe o responsável / efetivo (ou selecione um policial).","erro");
+      return;
+    }
+
+    const item = itensEstoque.find(it=>it.id===idItem);
+    if(!item){
+      mostrarMensagem(elMsgMov,"Item não encontrado no cache local.","erro");
+      return;
+    }
+
+    const qtdAntes = Number(item.qtdAtual || 0);
+    let qtdDepois = qtdAntes;
+
+    if(tipo==="entrada"){
+      qtdDepois = qtdAntes + quantidade;
+    }else{
+      if(quantidade>qtdAntes){
+        mostrarMensagem(elMsgMov,"Quantidade de saída maior que o estoque atual.","erro");
+        return;
+      }
+      qtdDepois = qtdAntes - quantidade;
+    }
+
+    const agoraIso = new Date().toISOString();
+
+    const payloadItemAtualizado = {
+      nome:item.nome,
+      categoria:item.categoria,
+      local:item.local,
+      qtdMinima:item.qtdMinima,
+      obs:item.obs,
+      qtdAtual:qtdDepois,
+      criadoEm:item.criadoEm || null,
+      atualizadoEm:agoraIso
+    };
+
+    const payloadMov = {
+      itemId:idItem,
+      itemNome:item.nome,
+      tipo,
+      quantidade,
+      responsavel:responsavelTexto,
+      policialId: policialId || null,
+      obs,
+      dataHora:agoraIso,
+      qtdAntes,
+      qtdDepois
+    };
+
+    try{
+      const respItem = await fetch(`${FIREBASE_URL}/estoque/${idItem}.json`,{
+        method:"PATCH",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify(payloadItemAtualizado)
+      });
+      if(!respItem.ok) throw new Error("Erro ao atualizar estoque: HTTP " + respItem.status);
+
+      const respMov = await fetch(`${FIREBASE_URL}/movimentacoes.json`,{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify(payloadMov)
+      });
+      if(!respMov.ok) throw new Error("Erro ao registrar movimentação: HTTP " + respMov.status);
+
+      mostrarMensagem(elMsgMov,"Movimentação registrada com sucesso.","sucesso");
+      elMovQtde.value = "1";
+      elMovObs.value = "";
+
+      await carregarEstoque();
+      await carregarHistorico();
+    }catch(e){
+      console.error("Erro em movimentação:",e);
+      mostrarMensagem(elMsgMov,"Erro ao registrar movimentação. Verifique conexão ou permissões do Firebase.","erro");
+    }
+  });
+
+  // Quando selecionar o policial no select, preencher o campo de responsável
+  elMovPolicial.addEventListener("change",()=>{
+    const id = elMovPolicial.value;
+    const p = policiais.find(pp=>pp.id===id);
+    if(p){
+      elMovResp.value = montarNomePolicial(p);
+    }
+  });
+
+  // Quando digitar o RE no campo de responsável, tentar vincular ao cadastro
+  elMovResp.addEventListener("blur", ()=>{
+    tentarSincronizarPorRe();
+  });
+
+  function normalizarRe(str){
+    if(!str) return "";
+    return String(str).toUpperCase().replace(/[^0-9A-Z]/g,"");
+  }
+
+  function tentarSincronizarPorRe(){
+    const texto = elMovResp.value.trim();
+    if(!texto) return;
+    const partes = texto.split(/\s+/);
+    const ultimo = partes[partes.length-1] || "";
+    const reNorm = normalizarRe(ultimo);
+    if(!reNorm) return;
+
+    const policial = policiais.find(p=> normalizarRe(p.re) === reNorm);
+    if(policial){
+      elMovPolicial.value = policial.id;
+      elMovResp.value = montarNomePolicial(policial);
+    }
+  }
+
+  // ===== FORM POLICIAIS =====
+  function resetFormPolicial(){
+    elPolicialId.value = "";
+    elPolicialNome.value = "";
+    elPolicialRe.value = "";
+    elPolicialPosto.value = "";
+    elPolicialCia.value = "";
+    elPolicialObs.value = "";
+    elBtnSalvarPolicial.textContent = "Cadastrar Policial";
+    elBtnCancelarPolicial.style.display = "none";
+  }
+
+  function preencherFormPolicial(p){
+    elPolicialId.value = p.id;
+    elPolicialNome.value = p.nome || "";
+    elPolicialRe.value = p.re || "";
+    elPolicialPosto.value = p.posto || "";
+    elPolicialCia.value = p.cia || "";
+    elPolicialObs.value = p.obs || "";
+    elBtnSalvarPolicial.textContent = "Atualizar Policial";
+    elBtnCancelarPolicial.style.display = "inline-block";
+  }
+
+  elFormPolicial.addEventListener("submit",async (e)=>{
+    e.preventDefault();
+    limparMensagens();
+
+    const nome = elPolicialNome.value.trim();
+    const re = elPolicialRe.value.trim();
+    const posto = elPolicialPosto.value.trim();
+    const cia = elPolicialCia.value.trim();
+    const obs = elPolicialObs.value.trim();
+
+    if(!nome || !re){
+      mostrarMensagem(elMsgPolicial,"Informe ao menos NOME e RE.","erro");
+      return;
+    }
+
+    const payload = { nome, re, posto, cia, obs };
+
+    const id = elPolicialId.value;
+    try{
+      if(id){
+        const resp = await fetch(`${FIREBASE_URL}/policiais/${id}.json`,{
+          method:"PATCH",
+          headers:{"Content-Type":"application/json"},
+          body:JSON.stringify(payload)
+        });
+        if(!resp.ok) throw new Error("Erro HTTP " + resp.status);
+        mostrarMensagem(elMsgPolicial,"Dados do policial atualizados.","sucesso");
+      }else{
+        const resp = await fetch(`${FIREBASE_URL}/policiais.json`,{
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body:JSON.stringify(payload)
+        });
+        if(!resp.ok) throw new Error("Erro HTTP " + resp.status);
+        mostrarMensagem(elMsgPolicial,"Policial cadastrado com sucesso.","sucesso");
+      }
+
+      resetFormPolicial();
+      await carregarPoliciais();
+    }catch(e){
+      console.error("Erro ao salvar policial:",e);
+      mostrarMensagem(elMsgPolicial,"Erro ao salvar policial. Verifique conexão ou permissões do Firebase.","erro");
+    }
+  });
+
+  elBtnCancelarPolicial.addEventListener("click",()=>{
+    resetFormPolicial();
+    limparMensagens();
+  });
+
+  elTbodyPoliciais.addEventListener("click",async (e)=>{
+    const btn = e.target.closest("button[data-acao]");
+    if(!btn) return;
+    const acao = btn.dataset.acao;
+    const id = btn.dataset.id;
+    const p = policiais.find(pp=>pp.id===id);
+    if(!p) return;
+
+    if(acao==="editar-policial"){
+      preencherFormPolicial(p);
+      window.scrollTo({top:0,behavior:"smooth"});
+    }
+
+    if(acao==="excluir-policial"){
+      if(!confirm("Confirma a exclusão deste policial do cadastro?")) return;
+      try{
+        const resp = await fetch(`${FIREBASE_URL}/policiais/${id}.json`,{
+          method:"DELETE"
+        });
+        if(!resp.ok) throw new Error("Erro HTTP " + resp.status);
+        mostrarMensagem(elMsgPolicial,"Policial excluído.","sucesso");
+        await carregarPoliciais();
+      }catch(e){
+        console.error("Erro ao excluir policial:",e);
+        mostrarMensagem(elMsgPolicial,"Erro ao excluir policial.","erro");
+      }
+    }
+  });
+
+  // ===== FILTROS HISTÓRICO =====
+  elBtnAplicarFiltros.addEventListener("click",()=>{
+    filtroDataInicio = elFiltroDataInicio.value || "";
+    filtroDataFim = elFiltroDataFim.value || "";
+    filtroPolicialId = elFiltroPolicial.value || "";
+    atualizarTabelaHistorico();
+  });
+
+  elBtnLimparFiltros.addEventListener("click",()=>{
+    filtroDataInicio = "";
+    filtroDataFim = "";
+    filtroPolicialId = "";
+    elFiltroDataInicio.value = "";
+    elFiltroDataFim.value = "";
+    elFiltroPolicial.value = "";
+    atualizarTabelaHistorico();
+  });
+
+  // ===== EXPORTAR ESTOQUE CSV =====
+  elBtnExportarCsv.addEventListener("click",()=>{
+    if(!itensEstoque.length){
+      alert("Não há itens para exportar.");
+      return;
+    }
+    const cabecalho = ["Nome","Categoria","Local","QtdAtual","QtdMinima","Obs"];
+    const linhas = itensEstoque.map(it=>[
+      it.nome,
+      it.categoria,
+      it.local,
+      it.qtdAtual,
+      it.qtdMinima,
+      it.obs
+    ]);
+    const csv = [cabecalho,...linhas]
+      .map(linha=> linha.map(campo=>{
+        const s = String(campo ?? "").replace(/"/g,'""');
+        return `"${s}"`;
+      }).join(";"))
+      .join("\r\n");
+
+    baixarCsv(csv,"estoque_18bpmi.csv");
+  });
+
+  // ===== EXPORTAR HISTÓRICO CSV =====
+  elBtnExportarHistorico.addEventListener("click",()=>{
+    const lista = aplicarFiltrosHistorico();
+    if(!lista.length){
+      alert("Não há movimentações para exportar com os filtros atuais.");
+      return;
+    }
+
+    const cabecalho = ["DataHora","Item","Tipo","Quantidade","Recebedor","QtdAntes","QtdDepois","Obs"];
+    const linhas = lista.map(mov=>{
+      const dataFormatada = formatarDataHora(mov.dataHora);
+      const tipoLabel = mov.tipo==="entrada" ? "Entrada" : "Saída";
+      const recebedor = mov.responsavel || mov.recebedor || "";
+      return [
+        dataFormatada,
+        mov.itemNome || "",
+        tipoLabel,
+        mov.quantidade || 0,
+        recebedor,
+        mov.qtdAntes ?? "",
+        mov.qtdDepois ?? "",
+        mov.obs || ""
+      ];
+    });
+
+    const csv = [cabecalho,...linhas]
+      .map(linha=> linha.map(campo=>{
+        const s = String(campo ?? "").replace(/"/g,'""');
+        return `"${s}"`;
+      }).join(";"))
+      .join("\r\n");
+
+    baixarCsv(csv,"historico_estoque_18bpmi.csv");
+  });
+
+  function baixarCsv(conteudo,nomeArquivo){
+    const blob = new Blob([conteudo],{type:"text/csv;charset=utf-8;"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = nomeArquivo;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  // ===== RELATÓRIO POR POLICIAL (IMPRESSÃO) =====
+  elBtnRelatorioPolicial.addEventListener("click",()=>{
+    const policialIdSel = elFiltroPolicial.value || "";
+    if(!policialIdSel){
+      alert("Selecione um policial no filtro para gerar o relatório.");
+      return;
+    }
+    filtroPolicialId = policialIdSel;
+    filtroDataInicio = elFiltroDataInicio.value || "";
+    filtroDataFim = elFiltroDataFim.value || "";
+
+    const lista = aplicarFiltrosHistorico();
+    if(!lista.length){
+      alert("Não há movimentações para os filtros selecionados.");
+      return;
+    }
+
+    const policial = policiais.find(p=>p.id===policialIdSel);
+    const tituloPolicial = policial ? montarNomePolicial(policial) : "Policial não identificado";
+
+    const periodoStr = (()=>{
+      if(!filtroDataInicio && !filtroDataFim) return "Período: não informado";
+      const ini = filtroDataInicio ? filtroDataInicio.split("-").reverse().join("/") : "...";
+      const fim = filtroDataFim ? filtroDataFim.split("-").reverse().join("/") : "...";
+      return `Período: ${ini} a ${fim}`;
+    })();
+
+    const agora = new Date();
+    const emissao = formatarDataHora(agora.toISOString());
+
+    let html = `
+      <html>
+      <head>
+        <title>Relatório de Movimentações - ${escapeHtml(tituloPolicial)}</title>
+        <meta charset="utf-8">
+        <style>
+          body{font-family:Arial,Helvetica,sans-serif;font-size:12px;margin:20px;color:#000;}
+          h1{font-size:18px;margin-bottom:4px;}
+          h2{font-size:14px;margin:6px 0;}
+          .sub{font-size:11px;color:#555;margin-bottom:10px;}
+          table{width:100%;border-collapse:collapse;font-size:11px;margin-top:10px;}
+          th,td{border:1px solid #444;padding:4px 6px;text-align:left;}
+          th{background:#eee;text-transform:uppercase;font-size:10px;}
+          .rodape{margin-top:15px;font-size:10px;color:#555;}
+        </style>
+      </head>
+      <body>
+        <h1>18º BPM/I - Relatório de Movimentações de Estoque</h1>
+        <h2>${escapeHtml(tituloPolicial)}</h2>
+        <div class="sub">${escapeHtml(periodoStr)}<br>Emitido em: ${escapeHtml(emissao)}</div>
+        <table>
+          <thead>
+            <tr>
+              <th>Data/Hora</th>
+              <th>Item</th>
+              <th>Tipo</th>
+              <th>Qtd</th>
+              <th>Antes</th>
+              <th>Depois</th>
+              <th>Observações</th>
+            </tr>
+          </thead>
+          <tbody>
+    `;
+
+    lista.forEach(mov=>{
+      const dataFormatada = formatarDataHora(mov.dataHora);
+      const tipoLabel = mov.tipo==="entrada" ? "Entrada" : "Saída";
+      html += `
+        <tr>
+          <td>${escapeHtml(dataFormatada)}</td>
+          <td>${escapeHtml(mov.itemNome || "")}</td>
+          <td>${escapeHtml(tipoLabel)}</td>
+          <td>${mov.quantidade || 0}</td>
+          <td>${mov.qtdAntes ?? ""}</td>
+          <td>${mov.qtdDepois ?? ""}</td>
+          <td>${escapeHtml(mov.obs || "")}</td>
+        </tr>
+      `;
+    });
+
+    html += `
+          </tbody>
+        </table>
+        <div class="rodape">
+          Sistema de Gestão de Estoque – 18º BPM/I • Uso interno
+        </div>
+      </body>
+      </html>
+    `;
+
+    const win = window.open("","relatorio","width=900,height=700");
+    if(win){
+      win.document.open();
+      win.document.write(html);
+      win.document.close();
+      win.focus();
+      win.print();
+    }else{
+      alert("Bloqueio de pop-up ativo. Permita pop-ups para visualizar o relatório.");
+    }
+  });
+
+  // ===== BUSCA / RECARREGAR =====
+  elBuscaItens.addEventListener("input",()=>{
+    atualizarTabelaItens();
+  });
+
+  elBtnRecarregar.addEventListener("click",async ()=>{
+    limparMensagens();
+    mostrarMensagem(elMsgTabela,"Recarregando dados do Firebase...","info");
+    await Promise.all([carregarEstoque(),carregarHistorico(),carregarPoliciais()]);
+    mostrarMensagem(elMsgTabela,"Dados recarregados.","sucesso");
+  });
+
+  // ===== UTIL =====
+  function escapeHtml(str){
+    if(str==null) return "";
+    return String(str)
+      .replace(/&/g,"&amp;")
+      .replace(/</g,"&lt;")
+      .replace(/>/g,"&gt;")
+      .replace(/"/g,"&quot;")
+      .replace(/'/g,"&#039;");
+  }
+
+  function formatarDataHora(iso){
+    if(!iso) return "";
+    const d = new Date(iso);
+    if(Number.isNaN(d.getTime())) return iso;
+    const dia = String(d.getDate()).padStart(2,"0");
+    const mes = String(d.getMonth()+1).padStart(2,"0");
+    const ano = d.getFullYear();
+    const h = String(d.getHours()).padStart(2,"0");
+    const m = String(d.getMinutes()).padStart(2,"0");
+    return `${dia}/${mes}/${ano} ${h}:${m}`;
+  }
+
+  // ===== INIT =====
+  (async function init(){
+    limparMensagens();
+    await Promise.all([
+      carregarEstoque(),
+      carregarHistorico(),
+      carregarPoliciais()
+    ]);
+  })();
+</script>
+</body>
+</html>
