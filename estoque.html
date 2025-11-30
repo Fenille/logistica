@@ -769,19 +769,19 @@
 </div>
 
 <script>
-  // ===== CONFIGURAÇÃO DO FIREBASE =====
-  const FIREBASE_URL = "https://gestaoviaturas-daf3e-default-rtdb.firebaseio.com";
+  // ===== CONFIGURAÇÃO DOS FIREBASES =====
+  const FIREBASE_URL = "https://gestaoviaturas-daf3e-default-rtdb.firebaseio.com";  // estoque + movimentações
+  const FIREBASE_URL_POLICIAIS = "https://logistica-bd8f4-default-rtdb.firebaseio.com"; // policiais
 
   let itensEstoque = [];
   let historicoMovAll = [];
   let policiais = [];
 
-  // Filtros de histórico
   let filtroDataInicio = "";
   let filtroDataFim = "";
   let filtroPolicialId = "";
 
-  // ===== ELEMENTOS =====
+  // ELEMENTOS DOM
   const elResumoItens = document.getElementById("resumo-itens");
   const elResumoUnidades = document.getElementById("resumo-unidades");
   const elResumoCriticos = document.getElementById("resumo-criticos");
@@ -853,7 +853,6 @@
   }
 
   // ===== CARREGAMENTO FIREBASE =====
-
   async function carregarEstoque(){
     try{
       const resp = await fetch(FIREBASE_URL + "/estoque.json");
@@ -905,7 +904,7 @@
 
   async function carregarPoliciais(){
     try{
-      const resp = await fetch(FIREBASE_URL + "/policiais.json");
+      const resp = await fetch(FIREBASE_URL_POLICIAIS + "/policiais.json");
       if(!resp.ok) throw new Error("Erro HTTP " + resp.status);
       const dados = await resp.json();
       policiais = [];
@@ -1345,7 +1344,7 @@
     }
   });
 
-  // Quando selecionar o policial no select, preencher o campo de responsável
+  // Sincronizar selects/campos com cadastro de policiais
   elMovPolicial.addEventListener("change",()=>{
     const id = elMovPolicial.value;
     const p = policiais.find(pp=>pp.id===id);
@@ -1354,7 +1353,6 @@
     }
   });
 
-  // Quando digitar o RE no campo de responsável, tentar vincular ao cadastro
   elMovResp.addEventListener("blur", ()=>{
     tentarSincronizarPorRe();
   });
@@ -1422,7 +1420,7 @@
     const id = elPolicialId.value;
     try{
       if(id){
-        const resp = await fetch(`${FIREBASE_URL}/policiais/${id}.json`,{
+        const resp = await fetch(`${FIREBASE_URL_POLICIAIS}/policiais/${id}.json`,{
           method:"PATCH",
           headers:{"Content-Type":"application/json"},
           body:JSON.stringify(payload)
@@ -1430,7 +1428,7 @@
         if(!resp.ok) throw new Error("Erro HTTP " + resp.status);
         mostrarMensagem(elMsgPolicial,"Dados do policial atualizados.","sucesso");
       }else{
-        const resp = await fetch(`${FIREBASE_URL}/policiais.json`,{
+        const resp = await fetch(`${FIREBASE_URL_POLICIAIS}/policiais.json`,{
           method:"POST",
           headers:{"Content-Type":"application/json"},
           body:JSON.stringify(payload)
@@ -1468,7 +1466,7 @@
     if(acao==="excluir-policial"){
       if(!confirm("Confirma a exclusão deste policial do cadastro?")) return;
       try{
-        const resp = await fetch(`${FIREBASE_URL}/policiais/${id}.json`,{
+        const resp = await fetch(`${FIREBASE_URL_POLICIAIS}/policiais/${id}.json`,{
           method:"DELETE"
         });
         if(!resp.ok) throw new Error("Erro HTTP " + resp.status);
@@ -1571,7 +1569,7 @@
     URL.revokeObjectURL(url);
   }
 
-  // ===== RELATÓRIO POR POLICIAL (IMPRESSÃO) =====
+  // ===== RELATÓRIO POR POLICIAL =====
   elBtnRelatorioPolicial.addEventListener("click",()=>{
     const policialIdSel = elFiltroPolicial.value || "";
     if(!policialIdSel){
