@@ -769,11 +769,9 @@
 </div>
 
 <script>
-  // ===== CONFIGURAÇÃO DOS FIREBASES =====
-  // Estoque + Movimentações (pode usar o mesmo do frota se quiser)
-  const FIREBASE_URL = "https://gestaoviaturas-daf3e-default-rtdb.firebaseio.com";
-  // Cadastro de policiais: banco separado de logística
-  const FIREBASE_URL_POLICIAIS = "https://logistica-bd8f4-default-rtdb.firebaseio.com";
+  // ===== CONFIGURAÇÃO DO FIREBASE (ÚNICO BANCO) =====
+  const FIREBASE_URL = "https://logistica-bd8f4-default-rtdb.firebaseio.com";
+  const FIREBASE_URL_POLICIAIS = FIREBASE_URL; // usa o mesmo banco para policiais
 
   let itensEstoque = [];
   let historicoMovAll = [];
@@ -1019,7 +1017,7 @@
     const lista = aplicarFiltrosHistorico();
 
     if(lista.length===0){
-      elTbodyHistorico.innerHTML = '<tr><td colspan="6">Nenhuma movimentação encontrado para os filtros selecionados.</td></tr>';
+      elTbodyHistorico.innerHTML = '<tr><td colspan="6">Nenhuma movimentação encontrada para os filtros selecionados.</td></tr>';
       return;
     }
 
@@ -1346,6 +1344,7 @@
     }
   });
 
+  // Sincronizar selects/campos com cadastro de policiais
   elMovPolicial.addEventListener("change",()=>{
     const id = elMovPolicial.value;
     const p = policiais.find(pp=>pp.id===id);
