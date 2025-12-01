@@ -92,6 +92,12 @@
       box-shadow:0 0 25px rgba(0,0,0,0.8);
     }
 
+    .top-user{
+      font-size:0.75rem;
+      color:var(--cinza-medio);
+      text-align:right;
+    }
+
     main{
       display:flex;
       flex-direction:column;
@@ -407,31 +413,42 @@
     }
 
     /* LOGIN */
-    .login-container{
-      max-width:420px;
-      margin:30px auto;
+    #login-area{
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
     }
-
     .login-card{
-      background:var(--card-bg);
-      border-radius:18px;
-      padding:18px 18px 20px;
+      width:100%;
+      max-width:360px;
+      padding:24px 20px;
+      border-radius:16px;
+      background:linear-gradient(145deg,rgba(0,0,0,0.95),rgba(25,25,25,0.96));
+      border:1px solid rgba(249,230,92,0.4);
       box-shadow:var(--shadow-soft);
-      border:1px solid rgba(255,255,255,0.08);
     }
-
-    .login-card h2{
+    .login-title{
       color:var(--amarelo);
-      margin-bottom:8px;
-      font-size:1.1rem;
-      letter-spacing:0.08em;
       text-transform:uppercase;
+      letter-spacing:0.12em;
+      font-size:0.9rem;
+      margin-bottom:4px;
     }
-
-    .login-card p{
-      font-size:0.8rem;
+    .login-sub{
+      font-size:0.78rem;
       color:var(--cinza-medio);
-      margin-bottom:12px;
+      margin-bottom:14px;
+    }
+    .login-footer{
+      margin-top:10px;
+      font-size:0.72rem;
+      color:var(--cinza-medio);
+      text-align:center;
+    }
+    .login-user-label{
+      font-weight:bold;
+      color:var(--amarelo-neon);
     }
 
     @media (max-width:900px){
@@ -467,28 +484,37 @@
 </head>
 <body>
 
-<!-- LOGIN -->
-<div id="login-wrapper" class="login-container">
+<!-- TELA DE LOGIN -->
+<div id="login-area">
   <div class="login-card">
-    <h2>Gestão de Estoque – Login</h2>
-    <p>Informe usuário e senha para registrar movimentações.</p>
-    <form id="login-form">
+    <div class="login-title">Acesso Restrito</div>
+    <div class="login-sub">
+      Informe usuário e senha para acessar a Gestão de Estoque.
+    </div>
+    <form id="form-login">
       <div class="form-group">
         <label for="login-usuario">Usuário</label>
-        <input id="login-usuario" type="text" autocomplete="username" placeholder="Ex.: Fenille">
+        <input id="login-usuario" type="text" placeholder="Ex.: Fenille" autocomplete="username" required>
       </div>
       <div class="form-group">
         <label for="login-senha">Senha</label>
-        <input id="login-senha" type="password" autocomplete="current-password" placeholder="Senha">
+        <input id="login-senha" type="password" placeholder="Digite a senha" autocomplete="current-password" required>
       </div>
       <div class="linha-botoes">
-        <button type="submit" class="btn-principal">Entrar</button>
+        <button type="submit" class="btn-principal" style="width:100%;justify-content:center;">
+          Entrar
+        </button>
       </div>
-      <div id="login-msg" class="msg-sistema"></div>
+      <div id="msg-login" class="msg-sistema" style="margin-top:6px;"></div>
     </form>
+    <div class="login-footer">
+      Usuários habilitados:
+      <span class="login-user-label">Fenille, Previato, Gleison, Melo</span>
+    </div>
   </div>
 </div>
 
+<!-- APLICATIVO -->
 <div class="app" id="app" style="display:none;">
   <header>
     <header-content>
@@ -500,11 +526,13 @@
         </span>
       </div>
     </header-content>
-    <div class="badge">
-      Sistema Interno • Uso Restrito<br>
-      <span id="user-info" style="font-size:0.7rem;color:var(--cinza-medio);">
-        Não autenticado
-      </span>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;position:relative;z-index:1;">
+      <div class="badge">
+        Sistema Interno • Uso Restrito
+      </div>
+      <div class="top-user">
+        Usuário: <span id="usuario-logado-label">não identificado</span>
+      </div>
     </div>
   </header>
 
@@ -620,6 +648,10 @@
 
             <div class="form-grid-3">
               <div class="form-group">
+                <label for="mov-re">RE do Recebedor (cadastro)</label>
+                <input id="mov-re" type="text" placeholder="Ex.: 140965-4" required>
+              </div>
+              <div class="form-group">
                 <label for="mov-tipo">Tipo</label>
                 <select id="mov-tipo" required>
                   <option value="entrada">Entrada</option>
@@ -630,17 +662,16 @@
                 <label for="mov-qtde">Quantidade</label>
                 <input id="mov-qtde" type="number" min="1" value="1" required>
               </div>
-              <div class="form-group">
-                <label for="mov-policial">Policial (cadastro)</label>
-                <select id="mov-policial">
-                  <option value="">Selecione...</option>
-                </select>
-              </div>
             </div>
 
             <div class="form-group">
-              <label for="mov-resp">Responsável (usuário logado)</label>
-              <input id="mov-resp" type="text" placeholder="Será preenchido pelo login" readonly required>
+              <label for="mov-recebedor">Recebedor (dados do cadastro)</label>
+              <input id="mov-recebedor" type="text" placeholder="Será preenchido pelo sistema" readonly>
+            </div>
+
+            <div class="form-group">
+              <label for="mov-resp">Responsável pela entrega (usuário logado)</label>
+              <input id="mov-resp" type="text" placeholder="Será preenchido após login" readonly>
             </div>
 
             <div class="form-group">
@@ -827,102 +858,15 @@
   const FIREBASE_URL = "https://logistica-bd8f4-default-rtdb.firebaseio.com";
   const FIREBASE_URL_POLICIAIS = FIREBASE_URL; // usa o mesmo banco para policiais
 
-  // ===== LOGIN (MESMOS USUÁRIOS DA FROTA) =====
-  const USERS = [
-    { login:"Fenille",  senha:"140965", nome:"Fenille" },
-    { login:"Previato", senha:"132800", nome:"Previato" },
-    { login:"Gleison",  senha:"133069", nome:"Gleison" },
-    { login:"Melo",     senha:"991315", nome:"Melo" }
-  ];
-
+  // ===== LOGIN (USUÁRIOS HABILITADOS) =====
+  const USERS = {
+    "Fenille":  { senha:"140965", nome:"Fenille"  },
+    "Previato": { senha:"132800", nome:"Previato" },
+    "Gleison":  { senha:"133069", nome:"Gleison"  },
+    "Melo":     { senha:"991315", nome:"Melo"     }
+  };
   let usuarioLogado = null;
 
-  const elLoginWrapper   = document.getElementById("login-wrapper");
-  const elApp            = document.getElementById("app");
-  const elLoginForm      = document.getElementById("login-form");
-  const elLoginUsuario   = document.getElementById("login-usuario");
-  const elLoginSenha     = document.getElementById("login-senha");
-  const elLoginMsg       = document.getElementById("login-msg");
-  const elUserInfo       = document.getElementById("user-info");
-
-  function aplicarUsuarioLogadoNaTela(){
-    const elMovResp = document.getElementById("mov-resp");
-    if(usuarioLogado){
-      elUserInfo.textContent = "Usuário: " + usuarioLogado.nome;
-      if(elMovResp){
-        elMovResp.value = usuarioLogado.nome;
-        elMovResp.readOnly = true;
-      }
-    }else{
-      elUserInfo.textContent = "Não autenticado";
-      if(elMovResp){
-        elMovResp.value = "";
-        elMovResp.readOnly = true;
-      }
-    }
-  }
-
-  function salvarUsuarioLocal(){
-    if(usuarioLogado){
-      localStorage.setItem("estoqueUsuarioLogado",
-        JSON.stringify({login:usuarioLogado.login, nome:usuarioLogado.nome}));
-    }else{
-      localStorage.removeItem("estoqueUsuarioLogado");
-    }
-  }
-
-  function carregarUsuarioLocal(){
-    try{
-      const raw = localStorage.getItem("estoqueUsuarioLogado");
-      if(!raw) return;
-      const obj = JSON.parse(raw);
-      const encontrado = USERS.find(u=>u.login === obj.login);
-      if(encontrado){
-        usuarioLogado = encontrado;
-        elLoginWrapper.style.display = "none";
-        elApp.style.display = "block";
-        aplicarUsuarioLogadoNaTela();
-      }
-    }catch(e){
-      console.warn("Falha ao carregar usuário logado:", e);
-    }
-  }
-
-  if(elLoginForm){
-    elLoginForm.addEventListener("submit", (e)=>{
-      e.preventDefault();
-      elLoginMsg.textContent = "";
-      elLoginMsg.className = "msg-sistema";
-
-      const login = (elLoginUsuario.value || "").trim();
-      const senha = (elLoginSenha.value || "").trim();
-
-      if(!login || !senha){
-        elLoginMsg.textContent = "Informe usuário e senha.";
-        elLoginMsg.classList.add("msg-erro");
-        return;
-      }
-
-      const user = USERS.find(u =>
-        u.login.toLowerCase() === login.toLowerCase() && u.senha === senha
-      );
-
-      if(!user){
-        elLoginMsg.textContent = "Usuário ou senha inválidos.";
-        elLoginMsg.classList.add("msg-erro");
-        return;
-      }
-
-      usuarioLogado = user;
-      salvarUsuarioLocal();
-      aplicarUsuarioLogadoNaTela();
-
-      elLoginWrapper.style.display = "none";
-      elApp.style.display = "block";
-    });
-  }
-
-  // ===== VARIÁVEIS GERAIS =====
   let itensEstoque = [];
   let historicoMovAll = [];
   let policiais = [];
@@ -932,6 +876,14 @@
   let filtroPolicialId = "";
 
   // ELEMENTOS DOM
+  const elLoginArea = document.getElementById("login-area");
+  const elApp = document.getElementById("app");
+  const elFormLogin = document.getElementById("form-login");
+  const elLoginUsuario = document.getElementById("login-usuario");
+  const elLoginSenha = document.getElementById("login-senha");
+  const elMsgLogin = document.getElementById("msg-login");
+  const elUsuarioLogadoLabel = document.getElementById("usuario-logado-label");
+
   const elResumoItens = document.getElementById("resumo-itens");
   const elResumoUnidades = document.getElementById("resumo-unidades");
   const elResumoCriticos = document.getElementById("resumo-criticos");
@@ -962,7 +914,8 @@
   const elMovItem = document.getElementById("mov-item");
   const elMovTipo = document.getElementById("mov-tipo");
   const elMovQtde = document.getElementById("mov-qtde");
-  const elMovPolicial = document.getElementById("mov-policial");
+  const elMovRe = document.getElementById("mov-re");
+  const elMovRecebedor = document.getElementById("mov-recebedor");
   const elMovResp = document.getElementById("mov-resp");
   const elMovObs = document.getElementById("mov-obs");
 
@@ -993,6 +946,7 @@
       el.textContent = "";
       el.className = "msg-sistema";
     });
+    // msg-login é tratado separado
   }
 
   function mostrarMensagem(el,msg,tipo="info"){
@@ -1001,6 +955,37 @@
     if(tipo==="erro") el.classList.add("msg-erro");
     if(tipo==="sucesso") el.classList.add("msg-sucesso");
   }
+
+  // ===== LOGIN =====
+  elFormLogin.addEventListener("submit",(e)=>{
+    e.preventDefault();
+    elMsgLogin.textContent = "";
+    elMsgLogin.className = "msg-sistema";
+
+    const usuario = (elLoginUsuario.value || "").trim();
+    const senha = (elLoginSenha.value || "").trim();
+
+    const cadastro = USERS[usuario];
+    if(!cadastro || cadastro.senha !== senha){
+      elMsgLogin.textContent = "Usuário ou senha inválidos.";
+      elMsgLogin.className = "msg-sistema msg-erro";
+      return;
+    }
+
+    usuarioLogado = {
+      login: usuario,
+      nome: cadastro.nome || usuario
+    };
+
+    elUsuarioLogadoLabel.textContent = usuarioLogado.nome + " (" + usuarioLogado.login + ")";
+    elMovResp.value = usuarioLogado.nome;
+    elMovResp.readOnly = true;
+
+    elLoginSenha.value = "";
+
+    elLoginArea.style.display = "none";
+    elApp.style.display = "block";
+  });
 
   // ===== CARREGAMENTO FIREBASE =====
   async function carregarEstoque(){
@@ -1176,7 +1161,7 @@
       const tipoLabel = mov.tipo==="entrada" ? "Entrada" : "Saída";
       const tipoCor = mov.tipo==="entrada" ? "tag-ok" : "tag-critico";
       const antesDepois = (mov.qtdAntes ?? "?") + " → " + (mov.qtdDepois ?? "?");
-      const recebedor = mov.responsavel || mov.recebedor || "";
+      const recebedor = mov.recebedor || mov.responsavel || "";
       return `
         <tr>
           <td>${dataFormatada}</td>
@@ -1241,27 +1226,18 @@
   }
 
   function atualizarSelectPoliciais(){
-    const selecionadoMov = elMovPolicial.value;
     const selecionadoFiltro = elFiltroPolicial.value;
 
-    elMovPolicial.innerHTML = '<option value="">Selecione...</option>';
     elFiltroPolicial.innerHTML = '<option value="">Todos</option>';
 
     policiais.forEach(p=>{
       const label = montarNomePolicial(p);
-
-      const optMov = document.createElement("option");
-      optMov.value = p.id;
-      optMov.textContent = label;
-      elMovPolicial.appendChild(optMov);
-
       const optFiltro = document.createElement("option");
       optFiltro.value = p.id;
       optFiltro.textContent = label;
       elFiltroPolicial.appendChild(optFiltro);
     });
 
-    if(selecionadoMov) elMovPolicial.value = selecionadoMov;
     if(selecionadoFiltro) elFiltroPolicial.value = selecionadoFiltro;
   }
 
@@ -1387,6 +1363,27 @@
   });
 
   // ===== FORM MOVIMENTAÇÃO =====
+  function normalizarRe(str){
+    if(!str) return "";
+    return String(str).toUpperCase().replace(/[^0-9A-Z]/g,"");
+  }
+
+  function sincronizarRecebedorPorRe(){
+    const re = elMovRe.value.trim();
+    if(!re){
+      elMovRecebedor.value = "";
+      return;
+    }
+    const policial = policiais.find(p=> normalizarRe(p.re) === normalizarRe(re));
+    if(policial){
+      elMovRecebedor.value = montarNomePolicial(policial);
+    }else{
+      elMovRecebedor.value = "RE não encontrado no cadastro";
+    }
+  }
+
+  elMovRe.addEventListener("blur", sincronizarRecebedorPorRe);
+
   elFormMov.addEventListener("submit",async (e)=>{
     e.preventDefault();
     limparMensagens();
@@ -1401,6 +1398,19 @@
       mostrarMensagem(elMsgMov,"Selecione um item para movimentar.","erro");
       return;
     }
+
+    const reRecebedor = elMovRe.value.trim();
+    if(!reRecebedor){
+      mostrarMensagem(elMsgMov,"Informe o RE do recebedor.","erro");
+      return;
+    }
+
+    const policialRecebedor = policiais.find(p=> normalizarRe(p.re) === normalizarRe(reRecebedor));
+    if(!policialRecebedor){
+      mostrarMensagem(elMsgMov,"RE não encontrado no cadastro de policiais.","erro");
+      return;
+    }
+
     const tipo = elMovTipo.value;
     const quantidade = Number(elMovQtde.value || 0);
     const obs = elMovObs.value.trim();
@@ -1410,13 +1420,10 @@
       return;
     }
 
-    const policialId = elMovPolicial.value || "";
-    const responsavelTexto = usuarioLogado ? usuarioLogado.nome : (elMovResp.value.trim() || ""); // por garantia
-
-    if(!responsavelTexto){
-      mostrarMensagem(elMsgMov,"Responsável não identificado. Faça login novamente.","erro");
-      return;
-    }
+    const responsavelTexto = usuarioLogado.nome;
+    const recebedorTexto = montarNomePolicial(policialRecebedor);
+    elMovRecebedor.value = recebedorTexto;
+    elMovResp.value = responsavelTexto;
 
     const item = itensEstoque.find(it=>it.id===idItem);
     if(!item){
@@ -1455,8 +1462,11 @@
       itemNome:item.nome,
       tipo,
       quantidade,
-      responsavel:responsavelTexto,   // sempre o usuário logado
-      policialId: policialId || null, // opcionalmente vincula ao policial (recebedor)
+      responsavel:responsavelTexto,          // quem entregou (usuário logado)
+      recebedor:recebedorTexto,              // quem recebeu (policial do RE)
+      policialId: policialRecebedor.id,
+      reRecebedor: policialRecebedor.re,
+      usuarioLogin: usuarioLogado.login,
       obs,
       dataHora:agoraIso,
       qtdAntes,
@@ -1487,16 +1497,6 @@
     }catch(e){
       console.error("Erro em movimentação:",e);
       mostrarMensagem(elMsgMov,"Erro ao registrar movimentação. Verifique conexão ou permissões do Firebase.","erro");
-    }
-  });
-
-  // Sincronizar selects/campos com cadastro de policiais (mantido)
-  elMovPolicial.addEventListener("change",()=>{
-    const id = elMovPolicial.value;
-    const p = policiais.find(pp=>pp.id===id);
-    if(p){
-      // Aqui você pode, no futuro, preencher algum campo com o nome do recebedor
-      // Atualmente, o "responsável" é o usuário logado.
     }
   });
 
@@ -1657,7 +1657,7 @@
     const linhas = lista.map(mov=>{
       const dataFormatada = formatarDataHora(mov.dataHora);
       const tipoLabel = mov.tipo==="entrada" ? "Entrada" : "Saída";
-      const recebedor = mov.responsavel || mov.recebedor || "";
+      const recebedor = mov.recebedor || mov.responsavel || "";
       return [
         dataFormatada,
         mov.itemNome || "",
@@ -1833,8 +1833,6 @@
   // ===== INIT =====
   (async function init(){
     limparMensagens();
-    carregarUsuarioLocal();       // tenta reaproveitar login
-    aplicarUsuarioLogadoNaTela(); // garante estado inicial do campo responsável
     await Promise.all([
       carregarEstoque(),
       carregarHistorico(),
