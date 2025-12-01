@@ -406,6 +406,34 @@
       color:var(--cinza-medio);
     }
 
+    /* LOGIN */
+    .login-container{
+      max-width:420px;
+      margin:30px auto;
+    }
+
+    .login-card{
+      background:var(--card-bg);
+      border-radius:18px;
+      padding:18px 18px 20px;
+      box-shadow:var(--shadow-soft);
+      border:1px solid rgba(255,255,255,0.08);
+    }
+
+    .login-card h2{
+      color:var(--amarelo);
+      margin-bottom:8px;
+      font-size:1.1rem;
+      letter-spacing:0.08em;
+      text-transform:uppercase;
+    }
+
+    .login-card p{
+      font-size:0.8rem;
+      color:var(--cinza-medio);
+      margin-bottom:12px;
+    }
+
     @media (max-width:900px){
       .cards-resumo{
         grid-template-columns:repeat(2,minmax(0,1fr));
@@ -438,7 +466,30 @@
   </style>
 </head>
 <body>
-<div class="app">
+
+<!-- LOGIN -->
+<div id="login-wrapper" class="login-container">
+  <div class="login-card">
+    <h2>Gestão de Estoque – Login</h2>
+    <p>Informe usuário e senha para registrar movimentações.</p>
+    <form id="login-form">
+      <div class="form-group">
+        <label for="login-usuario">Usuário</label>
+        <input id="login-usuario" type="text" autocomplete="username" placeholder="Ex.: Fenille">
+      </div>
+      <div class="form-group">
+        <label for="login-senha">Senha</label>
+        <input id="login-senha" type="password" autocomplete="current-password" placeholder="Senha">
+      </div>
+      <div class="linha-botoes">
+        <button type="submit" class="btn-principal">Entrar</button>
+      </div>
+      <div id="login-msg" class="msg-sistema"></div>
+    </form>
+  </div>
+</div>
+
+<div class="app" id="app" style="display:none;">
   <header>
     <header-content>
       <h1>Gestão de Estoque – Logística 18º BPM/I</h1>
@@ -450,7 +501,10 @@
       </div>
     </header-content>
     <div class="badge">
-      Sistema Interno • Uso Restrito
+      Sistema Interno • Uso Restrito<br>
+      <span id="user-info" style="font-size:0.7rem;color:var(--cinza-medio);">
+        Não autenticado
+      </span>
     </div>
   </header>
 
@@ -585,8 +639,8 @@
             </div>
 
             <div class="form-group">
-              <label for="mov-resp">Responsável / Efetivo (texto livre)</label>
-              <input id="mov-resp" type="text" placeholder="Ex.: 140965-4 FENILLE" required>
+              <label for="mov-resp">Responsável (usuário logado)</label>
+              <input id="mov-resp" type="text" placeholder="Será preenchido pelo login" readonly required>
             </div>
 
             <div class="form-group">
@@ -773,6 +827,102 @@
   const FIREBASE_URL = "https://logistica-bd8f4-default-rtdb.firebaseio.com";
   const FIREBASE_URL_POLICIAIS = FIREBASE_URL; // usa o mesmo banco para policiais
 
+  // ===== LOGIN (MESMOS USUÁRIOS DA FROTA) =====
+  const USERS = [
+    { login:"Fenille",  senha:"140965", nome:"Fenille" },
+    { login:"Previato", senha:"132800", nome:"Previato" },
+    { login:"Gleison",  senha:"133069", nome:"Gleison" },
+    { login:"Melo",     senha:"991315", nome:"Melo" }
+  ];
+
+  let usuarioLogado = null;
+
+  const elLoginWrapper   = document.getElementById("login-wrapper");
+  const elApp            = document.getElementById("app");
+  const elLoginForm      = document.getElementById("login-form");
+  const elLoginUsuario   = document.getElementById("login-usuario");
+  const elLoginSenha     = document.getElementById("login-senha");
+  const elLoginMsg       = document.getElementById("login-msg");
+  const elUserInfo       = document.getElementById("user-info");
+
+  function aplicarUsuarioLogadoNaTela(){
+    const elMovResp = document.getElementById("mov-resp");
+    if(usuarioLogado){
+      elUserInfo.textContent = "Usuário: " + usuarioLogado.nome;
+      if(elMovResp){
+        elMovResp.value = usuarioLogado.nome;
+        elMovResp.readOnly = true;
+      }
+    }else{
+      elUserInfo.textContent = "Não autenticado";
+      if(elMovResp){
+        elMovResp.value = "";
+        elMovResp.readOnly = true;
+      }
+    }
+  }
+
+  function salvarUsuarioLocal(){
+    if(usuarioLogado){
+      localStorage.setItem("estoqueUsuarioLogado",
+        JSON.stringify({login:usuarioLogado.login, nome:usuarioLogado.nome}));
+    }else{
+      localStorage.removeItem("estoqueUsuarioLogado");
+    }
+  }
+
+  function carregarUsuarioLocal(){
+    try{
+      const raw = localStorage.getItem("estoqueUsuarioLogado");
+      if(!raw) return;
+      const obj = JSON.parse(raw);
+      const encontrado = USERS.find(u=>u.login === obj.login);
+      if(encontrado){
+        usuarioLogado = encontrado;
+        elLoginWrapper.style.display = "none";
+        elApp.style.display = "block";
+        aplicarUsuarioLogadoNaTela();
+      }
+    }catch(e){
+      console.warn("Falha ao carregar usuário logado:", e);
+    }
+  }
+
+  if(elLoginForm){
+    elLoginForm.addEventListener("submit", (e)=>{
+      e.preventDefault();
+      elLoginMsg.textContent = "";
+      elLoginMsg.className = "msg-sistema";
+
+      const login = (elLoginUsuario.value || "").trim();
+      const senha = (elLoginSenha.value || "").trim();
+
+      if(!login || !senha){
+        elLoginMsg.textContent = "Informe usuário e senha.";
+        elLoginMsg.classList.add("msg-erro");
+        return;
+      }
+
+      const user = USERS.find(u =>
+        u.login.toLowerCase() === login.toLowerCase() && u.senha === senha
+      );
+
+      if(!user){
+        elLoginMsg.textContent = "Usuário ou senha inválidos.";
+        elLoginMsg.classList.add("msg-erro");
+        return;
+      }
+
+      usuarioLogado = user;
+      salvarUsuarioLocal();
+      aplicarUsuarioLogadoNaTela();
+
+      elLoginWrapper.style.display = "none";
+      elApp.style.display = "block";
+    });
+  }
+
+  // ===== VARIÁVEIS GERAIS =====
   let itensEstoque = [];
   let historicoMovAll = [];
   let policiais = [];
@@ -1241,6 +1391,11 @@
     e.preventDefault();
     limparMensagens();
 
+    if(!usuarioLogado){
+      mostrarMensagem(elMsgMov,"É necessário estar logado para registrar movimentações.","erro");
+      return;
+    }
+
     const idItem = elMovItem.value;
     if(!idItem){
       mostrarMensagem(elMsgMov,"Selecione um item para movimentar.","erro");
@@ -1256,19 +1411,10 @@
     }
 
     const policialId = elMovPolicial.value || "";
-    let responsavelTexto = elMovResp.value.trim();
-
-    const policialSelecionado = policiais.find(p=>p.id===policialId);
-    if(policialSelecionado){
-      const nomePolicial = montarNomePolicial(policialSelecionado);
-      if(!responsavelTexto){
-        responsavelTexto = nomePolicial;
-        elMovResp.value = responsavelTexto;
-      }
-    }
+    const responsavelTexto = usuarioLogado ? usuarioLogado.nome : (elMovResp.value.trim() || ""); // por garantia
 
     if(!responsavelTexto){
-      mostrarMensagem(elMsgMov,"Informe o responsável / efetivo (ou selecione um policial).","erro");
+      mostrarMensagem(elMsgMov,"Responsável não identificado. Faça login novamente.","erro");
       return;
     }
 
@@ -1309,8 +1455,8 @@
       itemNome:item.nome,
       tipo,
       quantidade,
-      responsavel:responsavelTexto,
-      policialId: policialId || null,
+      responsavel:responsavelTexto,   // sempre o usuário logado
+      policialId: policialId || null, // opcionalmente vincula ao policial (recebedor)
       obs,
       dataHora:agoraIso,
       qtdAntes,
@@ -1344,38 +1490,15 @@
     }
   });
 
-  // Sincronizar selects/campos com cadastro de policiais
+  // Sincronizar selects/campos com cadastro de policiais (mantido)
   elMovPolicial.addEventListener("change",()=>{
     const id = elMovPolicial.value;
     const p = policiais.find(pp=>pp.id===id);
     if(p){
-      elMovResp.value = montarNomePolicial(p);
+      // Aqui você pode, no futuro, preencher algum campo com o nome do recebedor
+      // Atualmente, o "responsável" é o usuário logado.
     }
   });
-
-  elMovResp.addEventListener("blur", ()=>{
-    tentarSincronizarPorRe();
-  });
-
-  function normalizarRe(str){
-    if(!str) return "";
-    return String(str).toUpperCase().replace(/[^0-9A-Z]/g,"");
-  }
-
-  function tentarSincronizarPorRe(){
-    const texto = elMovResp.value.trim();
-    if(!texto) return;
-    const partes = texto.split(/\s+/);
-    const ultimo = partes[partes.length-1] || "";
-    const reNorm = normalizarRe(ultimo);
-    if(!reNorm) return;
-
-    const policial = policiais.find(p=> normalizarRe(p.re) === reNorm);
-    if(policial){
-      elMovPolicial.value = policial.id;
-      elMovResp.value = montarNomePolicial(policial);
-    }
-  }
 
   // ===== FORM POLICIAIS =====
   function resetFormPolicial(){
@@ -1710,6 +1833,8 @@
   // ===== INIT =====
   (async function init(){
     limparMensagens();
+    carregarUsuarioLocal();       // tenta reaproveitar login
+    aplicarUsuarioLogadoNaTela(); // garante estado inicial do campo responsável
     await Promise.all([
       carregarEstoque(),
       carregarHistorico(),
